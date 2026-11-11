@@ -2,7 +2,7 @@ import './style.css';
 import { haptics, sound } from './audio/sound.ts';
 import { PICTURES } from './pictures/index.ts';
 import { load, setSetting } from './storage.ts';
-import { $, hideOverlay, setIconButton } from './ui/dom.ts';
+import { $, hideOverlay, setIconButton, showCard } from './ui/dom.ts';
 import { fillGallery } from './ui/galleryScreen.ts';
 import { devHandle, initGame, openLevel, refreshSoundIcon, setGameActive } from './ui/gameScreen.ts';
 import { ICONS } from './ui/icons.ts';
@@ -109,6 +109,45 @@ document.addEventListener(
   },
   { passive: false },
 );
+
+// ---- PWA: offline cache and "add to home screen" ----
+
+if ('serviceWorker' in navigator && import.meta.env.PROD) {
+  const base = import.meta.env.BASE_URL;
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register(`${base}sw.js`, { scope: base }).catch(() => {});
+  });
+}
+
+interface InstallPrompt extends Event {
+  prompt(): Promise<void>;
+}
+let installPrompt: InstallPrompt | null = null;
+const standalone =
+  window.matchMedia('(display-mode: standalone)').matches ||
+  (navigator as unknown as { standalone?: boolean }).standalone === true;
+const installBtn = $<HTMLButtonElement>('install');
+installBtn.textContent = STR.install;
+installBtn.hidden = standalone;
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  installPrompt = e as InstallPrompt;
+});
+window.addEventListener('appinstalled', () => (installBtn.hidden = true));
+installBtn.addEventListener('click', () => {
+  if (installPrompt) {
+    void installPrompt.prompt();
+    installPrompt = null;
+    return;
+  }
+  const ua = navigator.userAgent;
+  const text = /iPhone|iPad|iPod|Macintosh.*Mobile/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1)
+    ? STR.installIos
+    : /Android/.test(ua)
+      ? STR.installAndroid
+      : STR.installOther;
+  showCard(STR.installTitle, text, [[STR.ok, () => {}, true]]);
+});
 
 goStart();
 

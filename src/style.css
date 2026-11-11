@@ -279,6 +279,19 @@ button.big small {
   transition: width 0.6s ease;
 }
 
+button.link {
+  margin-top: 18px;
+  background: none;
+  border: none;
+  color: var(--ink-dim);
+  font-size: 14px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+button.link[hidden] {
+  display: none;
+}
+
 /* ---- Gallery ---- */
 #gallery-grid {
   flex: 1;

@@ -271,6 +271,8 @@ async function hint(): Promise<void> {
 
 export function initGame(h: GameHooks): void {
   hooks = h;
+  // Start the solver worker right away so its script is cached for offline play.
+  hints = new HintClient();
   view.onEvent = (e) => {
     const delay = e.at - now();
     if (e.type === 'land') {

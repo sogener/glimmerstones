@@ -187,6 +187,8 @@ src/
   main.ts
 scripts/
   generate-levels.ts   генерация уровней при сборке
+  make-icons.mjs, icon.html   рендер иконок кодом игры
+public/        manifest.webmanifest, icons/
 ```
 
 ## Правила кода
@@ -200,6 +202,7 @@ scripts/
 - `npm run dev -- --host` — dev-сервер для телефона в той же сети
 - `npm test` — тесты, `npm run build` — генерация уровней + typecheck + сборка
 - `npm run levels` — только перегенерировать уровни
+- `npm run icons` — перерисовать иконки PWA (нужен Playwright)
 - Скрипты на TS запускаются нативно Node 22 (type stripping) — импорты с расширением `.ts`,
   только «стираемый» синтаксис (без enum/namespace).
 
@@ -207,6 +210,21 @@ scripts/
 - Автор и коммиттер — владелец репозитория (задано в `git config` репозитория).
 - В сообщениях коммитов нет строк Claude-Session и Co-Authored-By;
   `.claude/settings.json` отключает атрибуцию, CI роняет сборку, если они есть в истории.
+
+## PWA (этап 6)
+- `public/manifest.webmanifest`: все пути относительные (`./`), поэтому работает под
+  `/glimmerstones/`; `display: standalone`, портрет, иконки 192/512/maskable.
+- Иконки (`public/icons/*.png`) рисуются кодом игры (`scripts/icon.html` + `npm run icons`,
+  нужен Playwright) и коммитятся.
+- Service worker генерируется при сборке плагином в `vite.config.ts`: точный список
+  файлов сборки + public, имя кэша = хэш списка; install — кэширует всё, activate — удаляет
+  старые кэши, fetch — cache-first, навигация отдаёт кэшированную оболочку.
+  Регистрация только в production: `${BASE_URL}sw.js`, scope = `BASE_URL`.
+- Worker подсказок создаётся при старте игры, чтобы попасть в кэш до первого запроса.
+- Кнопка «Добавить на экран «Домой»» на старте (скрыта в standalone): на Android вызывает
+  `beforeinstallprompt`, иначе — карточка с инструкцией для iOS/Android.
+- Проверено: офлайн-перезагрузка под `/glimmerstones/` в Chromium — игра и подсказка работают.
+- Инструкция по установке для людей — `README.md`.
 
 ## Деплой
 GitHub Pages через Actions (`.github/workflows/deploy.yml`) на каждый push в `main`:
@@ -220,4 +238,4 @@ manifest и service worker (этап 6) — с относительными пу
 - [x] Этап 3 — картинка-награда
 - [x] Этап 4 — стартовый экран, уровни, галерея, сохранение
 - [x] Этап 5 — полировка: частицы, звуки, вибрация
-- [ ] Этап 6 — PWA и деплой
+- [x] Этап 6 — PWA и деплой

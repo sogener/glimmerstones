@@ -1,0 +1,39 @@
+<!doctype html>
+<html>
+  <body style="margin: 0; background: transparent">
+    <canvas id="c"></canvas>
+    <script type="module">
+      // App icon, drawn with the game's own gem renderer (see scripts/make-icons.mjs).
+      import { GemAtlas, drawSprite, GEM_STYLES } from '/src/render/gems.ts';
+      const q = new URLSearchParams(location.search);
+      const size = Number(q.get('size') || 512);
+      const maskable = q.get('maskable') === '1';
+      const c = document.getElementById('c');
+      c.width = c.height = size;
+      const ctx = c.getContext('2d');
+      const bg = ctx.createRadialGradient(size * 0.5, size * 0.38, 0, size * 0.5, size * 0.5, size * 0.75);
+      bg.addColorStop(0, '#4a2a78');
+      bg.addColorStop(0.55, '#2a1748');
+      bg.addColorStop(1, '#140c26');
+      ctx.fillStyle = bg;
+      ctx.fillRect(0, 0, size, size);
+      const atlas = new GemAtlas(GEM_STYLES);
+      atlas.setDpr(1);
+      const r = size * (maskable ? 0.26 : 0.31);
+      const cx = size / 2;
+      const cy = size * 0.52;
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.globalAlpha = 0.9;
+      drawSprite(ctx, atlas.get(2, r, 'glow'), cx, cy, r * 1.05);
+      ctx.globalCompositeOperation = 'source-over';
+      ctx.globalAlpha = 1;
+      drawSprite(ctx, atlas.get(2, r), cx, cy, r);
+      ctx.globalCompositeOperation = 'lighter';
+      const k = maskable ? 0.8 : 1;
+      for (const [x, y, s] of [[-0.33, -0.3, 0.13], [0.36, -0.12, 0.08], [0.22, 0.34, 0.06], [-0.12, -0.12, 0.09]]) {
+        drawSprite(ctx, atlas.getGlint(), cx + x * size * k, cy + y * size * k, s * size);
+      }
+      document.title = 'ready';
+    </script>
+  </body>
+</html>
