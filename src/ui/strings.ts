@@ -12,7 +12,7 @@ export function plural(n: number, one: string, few: string, many: string): strin
 const moves = (n: number) => `${n} ${plural(n, 'ход', 'хода', 'ходов')}`;
 
 /** Who the game greets. */
-export const PLAYER_NAME = 'Зилант';
+export const PLAYER_NAME = 'Yenn';
 
 /** Gentle lines under the greeting; one per day. */
 export const PHRASES = [
