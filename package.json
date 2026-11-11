@@ -1,0 +1,19 @@
+{
+  "name": "glimmerstones",
+  "version": "0.1.0",
+  "scripts": {
+    "dev": "vite",
+    "levels": "node scripts/generate-levels.ts",
+    "build": "npm run levels && tsc -p . && vite build",
+    "preview": "vite preview",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.6",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.8",
+    "vitest": "^5.1.0"
+  },
+  "private": true,
+  "type": "module"
+}

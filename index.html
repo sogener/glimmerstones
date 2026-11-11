@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#1b1230" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <title>Glimmerstones</title>
+  </head>
+  <body>
+    <div id="app">
+      <header id="top">
+        <button class="nav" id="prev" aria-label="Предыдущий уровень">‹</button>
+        <div class="title">
+          <div class="name">Glimmerstones</div>
+          <div class="level" id="level"></div>
+        </div>
+        <button class="nav" id="next" aria-label="Следующий уровень">›</button>
+      </header>
+      <main id="field"><canvas id="board"></canvas></main>
+      <footer id="bottom">
+        <button id="undo"><span class="ico">↶</span><span class="lbl"></span></button>
+        <button id="restart"><span class="ico">⟳</span><span class="lbl"></span></button>
+        <button id="shelf"><span class="ico">＋</span><span class="lbl"></span></button>
+      </footer>
+      <div id="overlay" hidden><div class="card" id="card"></div></div>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
