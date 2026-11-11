@@ -1,4 +1,5 @@
 import './style.css';
+import { haptics, sound } from './audio/sound.ts';
 import { PICTURES } from './pictures/index.ts';
 import { load, setSetting } from './storage.ts';
 import { $, hideOverlay, setIconButton } from './ui/dom.ts';
@@ -18,6 +19,20 @@ function show(name: ScreenName): void {
   setGameActive(name === 'game');
   if (name === 'start') floating.start();
   else floating.stop();
+}
+
+function refreshSettings(): void {
+  const st = load().settings;
+  sound.enabled = st.sound;
+  haptics.enabled = st.vibration;
+  const sb = $('set-sound');
+  sb.innerHTML = (st.sound ? ICONS.soundOn : ICONS.soundOff) + `<span>${STR.sound}</span>`;
+  sb.classList.toggle('off', !st.sound);
+  const vb = $('set-vibration');
+  vb.hidden = !haptics.supported;
+  vb.innerHTML = ICONS.vibration + `<span>${STR.vibration}</span>`;
+  vb.classList.toggle('off', !st.vibration);
+  refreshSoundIcon();
 }
 
 function goStart(): void {
@@ -49,6 +64,8 @@ initGame({
   toggleSound: () => {
     const on = !load().settings.sound;
     setSetting('sound', on);
+    sound.setEnabled(on);
+    refreshSettings();
     return on;
   },
   soundOn: () => load().settings.sound,
@@ -57,7 +74,30 @@ initGame({
 $('play').addEventListener('click', play);
 $('open-gallery').addEventListener('click', goGallery);
 setIconButton('gallery-back', ICONS.back, STR.back, goStart);
-refreshSoundIcon();
+$('set-sound').addEventListener('click', () => {
+  const on = !load().settings.sound;
+  setSetting('sound', on);
+  sound.setEnabled(on);
+  refreshSettings();
+  sound.button();
+});
+$('set-vibration').addEventListener('click', () => {
+  const on = !load().settings.vibration;
+  setSetting('vibration', on);
+  refreshSettings();
+  haptics.buzz(20);
+});
+refreshSettings();
+
+// Audio may only start from a user gesture (iOS): unlock on the first touch.
+const unlock = () => sound.unlock();
+document.addEventListener('pointerdown', unlock, { capture: true });
+document.addEventListener('touchend', unlock, { capture: true });
+document.addEventListener('click', (e) => {
+  if (e.target instanceof Element && e.target.closest('footer button, .big, #home, #gallery-back, .tile, .card button')) {
+    sound.button();
+  }
+});
 
 // No pinch / double-tap zoom, no page scroll (the gallery grid scrolls by itself).
 document.addEventListener('gesturestart', (e) => e.preventDefault());
@@ -83,5 +123,6 @@ if (import.meta.env.DEV) {
       openLevel(n);
     },
     show,
+    sound,
   };
 }

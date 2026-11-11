@@ -43,6 +43,8 @@ export const STR = {
   close: 'Закрыть',
   soundOn: 'Звук включён',
   soundOff: 'Звук выключен',
+  sound: 'Звук',
+  vibration: 'Вибрация',
   subtitle: 'мерцающие камни',
   level: (n: number) => `Уровень ${n}`,
   undo: 'Отменить',

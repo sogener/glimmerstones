@@ -8,6 +8,9 @@ export const ICONS = {
   soundOn: svg(
     '<path d="M4 9.5h3.5L12 6v12l-4.5-3.5H4z"/><path d="M15.5 9a4 4 0 0 1 0 6"/><path d="M18 6.5a7.5 7.5 0 0 1 0 11"/>',
   ),
+  vibration: svg(
+    '<rect x="8" y="3.5" width="8" height="17" rx="2"/><path d="M4 9v6M20 9v6M2 10.5v3M22 10.5v3"/>',
+  ),
   soundOff: svg('<path d="M4 9.5h3.5L12 6v12l-4.5-3.5H4z"/><path d="M16 9.5l5 5M21 9.5l-5 5"/>'),
   undo: svg('<path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/>'),
   restart: svg('<path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/>'),

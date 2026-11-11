@@ -53,6 +53,7 @@ interface Flyer {
   arc: number;
   /** Cell kept hidden until the flyer lands (used when a dragged stone returns). */
   hide?: CellRef;
+  trail?: number;
 }
 
 /** Receives collected triples (the reward picture). */
@@ -70,6 +71,7 @@ interface PicFlyer {
   r1: number;
   start: number;
   dur: number;
+  trail?: number;
 }
 
 interface Flash {
@@ -77,6 +79,22 @@ interface Flash {
   y: number;
   color: Color;
   start: number;
+}
+
+/** Moments the sound/haptics layer cares about; `at` may be in the future. */
+export type ViewEvent =
+  | { type: 'land'; at: number }
+  | { type: 'triple'; at: number }
+  | { type: 'advance'; at: number }
+  | { type: 'pour'; at: number; cells: number };
+
+interface Mote {
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  phase: number;
+  size: number;
 }
 
 export interface DragState {
@@ -109,6 +127,9 @@ export class BoardView {
   private flashes: Flash[] = [];
   /** Where collected triples fly to; without it they just flash on the shelf. */
   tripleSink: TripleSink | null = null;
+  onEvent: ((e: ViewEvent) => void) | null = null;
+  private motes: Mote[] = [];
+  private lastFrame = 0;
 
   layout!: Layout;
   private fromLayout: Layout | null = null;
@@ -127,6 +148,16 @@ export class BoardView {
     this.dpr = dpr;
     this.atlas.setDpr(dpr);
     this.layers.invalidate();
+    let seed = 12345;
+    const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+    this.motes = Array.from({ length: Math.round((w * h) / 22000) + 6 }, () => ({
+      x: rnd() * w,
+      y: rnd() * h,
+      vx: (rnd() - 0.5) * 6,
+      vy: -2 - rnd() * 5,
+      phase: rnd() * Math.PI * 2,
+      size: 3 + rnd() * 5,
+    }));
   }
 
   /** Sets a new target layout, optionally animating shelves to their new places. */
@@ -280,6 +311,8 @@ export class BoardView {
         this.shown[i] = step.shelf;
         this.anims[i] = step.anim ? ({ ...step.anim, start: step.at } as Anim) : null;
         if (step.anim?.type === 'triple') this.onTriple(i, step.anim.color, step.at);
+        if (step.anim?.type === 'land') this.landed(i, step.anim.cell, step.at);
+        if (step.anim?.type === 'advance') this.onEvent?.({ type: 'advance', at: step.at });
       }
       const a = this.anims[i];
       if (a && now >= a.start + a.dur) this.anims[i] = null;
@@ -289,8 +322,22 @@ export class BoardView {
     this.flashes = this.flashes.filter((f) => now < f.start + T.flash);
   }
 
+  private landed(shelf: number, cell: number, at: number): void {
+    this.onEvent?.({ type: 'land', at });
+    const L = this.layout.shelves[shelf];
+    if (!L) return;
+    this.particles.burst(this.atlas.getGlint(), L.cellX[cell], L.gemY + this.layout.gemR * 0.6, at, {
+      count: 5,
+      speed: 0.05,
+      size: this.layout.cell * 0.16,
+      life: 380,
+      gravity: 0,
+    });
+  }
+
   /** A triple was collected on a shelf at time `at`: fly it into the picture (or flash). */
   private onTriple(shelf: number, color: Color, at: number): void {
+    this.onEvent?.({ type: 'triple', at });
     const target = this.tripleSink?.reserve(color);
     if (!target) {
       this.scheduleFlash(shelf, color, at);
@@ -309,6 +356,16 @@ export class BoardView {
       arrive = Math.max(arrive, start + dur);
     }
     this.tripleSink!.arrive(target.ref, arrive - 140);
+    this.onEvent?.({ type: 'pour', at: arrive - 140, cells: 6 });
+    const Ls = this.layout.shelves[shelf];
+    if (Ls) {
+      this.particles.burst(this.atlas.getGlint(), Ls.cellX[1], Ls.gemY - lift, at + 60, {
+        count: 10,
+        speed: 0.09,
+        size: this.layout.cell * 0.2,
+        life: 520,
+      });
+    }
     const glint = this.atlas.getGlint();
     this.particles.burst(glint, target.x, target.y, arrive - 80, {
       count: 12,
@@ -356,6 +413,8 @@ export class BoardView {
       ctx.drawImage(this.layers.back, 0, 0, this.w, this.h);
     }
 
+    this.drawMotes(ctx, now);
+
     // 2. Stones resting in the trays.
     this.shown.forEach((shelf, i) => {
       const L = layout.shelves[i];
@@ -383,6 +442,37 @@ export class BoardView {
 
   /** When true, draw() skips particles so the caller can draw them above other layers. */
   particlesOnTop = false;
+
+  /** Barely visible glitter drifting in the background. */
+  private drawMotes(ctx: CanvasRenderingContext2D, now: number): void {
+    const dt = Math.min(0.05, (now - (this.lastFrame || now)) / 1000);
+    this.lastFrame = now;
+    const glint = this.atlas.getGlint();
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    for (const m of this.motes) {
+      m.x += m.vx * dt;
+      m.y += m.vy * dt;
+      if (m.y < -10) {
+        m.y = this.h + 10;
+        m.x = Math.random() * this.w;
+      }
+      if (m.x < -10) m.x = this.w + 10;
+      if (m.x > this.w + 10) m.x = -10;
+      const a = 0.12 + 0.12 * Math.sin(now / 900 + m.phase);
+      if (a <= 0.02) continue;
+      ctx.globalAlpha = a;
+      drawSprite(ctx, glint, m.x, m.y, m.size * (0.8 + 0.3 * Math.sin(now / 600 + m.phase * 2)));
+    }
+    ctx.restore();
+  }
+
+  /** Leaves a faint sparkle trail behind flying stones. */
+  private trail(f: { trail?: number }, x: number, y: number, now: number, size: number): void {
+    if (f.trail !== undefined && now - f.trail < 34) return;
+    f.trail = now;
+    this.particles.burst(this.atlas.getGlint(), x, y, now, { count: 1, speed: 0.02, size, life: 420, gravity: 0.00003 });
+  }
 
   private appearAlpha(i: number, now: number): number {
     const a = this.anims[i];
@@ -544,6 +634,7 @@ export class BoardView {
     const r = layout.gemR * (1 + 0.12 * bump(k));
     this.glow(ctx, f.color, x, y, r, 0.5 * bump(k) + 0.2);
     drawSprite(ctx, this.atlas.get(f.color, this.layout.gemR), x, y, r);
+    if (k > 0.05 && k < 0.95) this.trail(f, x, y, now, layout.cell * 0.14);
   }
 
   private drawPicFlyer(ctx: CanvasRenderingContext2D, f: PicFlyer, layout: Layout, now: number): void {
@@ -562,6 +653,7 @@ export class BoardView {
     const r = lerp(layout.gemR * 1.15, f.r1, easeInCubic(k));
     this.glow(ctx, f.color, x, y, r * 1.1, 0.85 - 0.4 * k);
     drawSprite(ctx, this.atlas.get(f.color, this.layout.gemR), x, y, r);
+    if (k < 0.97) this.trail(f, x, y, now, layout.cell * 0.18);
   }
 
   private drawSelected(ctx: CanvasRenderingContext2D, layout: Layout, now: number): void {

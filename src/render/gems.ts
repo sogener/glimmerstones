@@ -53,14 +53,62 @@ function hslToHex(h: number, s: number, l: number): string {
   return '#' + [f(0), f(8), f(4)].map((v) => v.toString(16).padStart(2, '0')).join('');
 }
 
+const L_MIN = 0.32;
+const L_MAX = 0.84;
+const MIN_L_GAP = 0.2;
+
+function hueDist(a: number, b: number): number {
+  const d = Math.abs(a - b) % 1;
+  return Math.min(d, 1 - d);
+}
+
 /**
- * Gem look for a picture palette: same hue, lightness kept in a readable range
- * (black/white picture colors become smoky/diamond gems). Cut follows palette order.
+ * Gem look for a picture palette: same hue, lightness kept readable on velvet
+ * (black/white picture colors become smoky/diamond gems), and colors of similar hue
+ * (outline/fill/highlight tones of one object) pushed apart in lightness.
+ * The cut follows palette order.
  */
 export function gemStylesForPalette(colors: readonly string[]): GemStyle[] {
-  return colors.map((hex, i) => {
-    const [h, s, l] = hexToHsl(hex);
-    return { shape: SHAPES[i % SHAPES.length], color: hslToHex(h, s, Math.min(0.72, Math.max(0.4, l))) };
+  const hsl = colors.map(hexToHsl);
+  const L = hsl.map(([, , l]) => Math.min(L_MAX, Math.max(L_MIN, l)));
+  const similar = (i: number, j: number) => {
+    const [hi, si] = hsl[i];
+    const [hj, sj] = hsl[j];
+    const grayish = si < 0.2 || sj < 0.2;
+    return grayish ? si < 0.2 && sj < 0.2 : hueDist(hi, hj) < 0.07;
+  };
+  for (let iter = 0; iter < 12; iter++) {
+    let moved = false;
+    for (let i = 0; i < L.length; i++)
+      for (let j = i + 1; j < L.length; j++) {
+        if (!similar(i, j)) continue;
+        const gap = Math.abs(L[i] - L[j]);
+        if (gap >= MIN_L_GAP) continue;
+        const push = (MIN_L_GAP - gap) / 2 + 0.005;
+        const [lo, hi] = L[i] <= L[j] ? [i, j] : [j, i];
+        L[lo] = Math.max(L_MIN, L[lo] - push);
+        L[hi] = Math.min(L_MAX, L[hi] + push);
+        moved = true;
+      }
+    if (!moved) break;
+  }
+  // A small hue nudge (at most ~15°) between near-identical hues: still "the same color",
+  // but crimson vs coral reads better than two reds.
+  const H = hsl.map(([h]) => h);
+  for (let i = 0; i < H.length; i++)
+    for (let j = i + 1; j < H.length; j++) {
+      if (!similar(i, j) || hsl[i][1] < 0.2 || hsl[j][1] < 0.2) continue;
+      const d = hueDist(H[i], H[j]);
+      if (d >= 0.05) continue;
+      const push = Math.min(0.02, (0.05 - d) / 2);
+      // The darker tone drifts towards purple, the lighter towards orange/yellow.
+      const [dark, light] = L[i] <= L[j] ? [i, j] : [j, i];
+      H[dark] = (H[dark] - push + 1) % 1;
+      H[light] = (H[light] + push) % 1;
+    }
+  return colors.map((_, i) => {
+    const [, s] = hsl[i];
+    return { shape: SHAPES[i % SHAPES.length], color: hslToHex(H[i], Math.min(1, s * 1.05), L[i]) };
   });
 }
 

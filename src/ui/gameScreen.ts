@@ -1,4 +1,5 @@
-import { colorCounts } from '../core/board.ts';
+import { haptics, sound } from '../audio/sound.ts';
+import { colorCounts, stoneCount } from '../core/board.ts';
 import { Game, type GameSnapshot } from '../core/game.ts';
 import { hintIsValid } from '../core/hint.ts';
 import { levelBoard } from '../core/levelpack.ts';
@@ -51,6 +52,9 @@ let hintBusy = false;
 /** Time the win celebration started, or null. */
 let celebrating: number | null = null;
 let active = false;
+let totalStones = 1;
+/** Triples collected so far in this level: their chime climbs the scale. */
+let tripleStep = 0;
 
 const g = (): Game => game!;
 
@@ -64,6 +68,7 @@ export function openLevel(n: number, snapshot: GameSnapshot | null = null): void
   game = (snapshot && Game.restore(initial, snapshot)) || new Game(initial);
   const pic = getPicture(level.picture)!;
   const triples = colorCounts(initial).map((k) => k / 3);
+  totalStones = stoneCount(initial);
   picture.setPicture(pic, triples);
   view.atlas.setStyles(gemStylesForPalette(paletteKeys(pic).map((k) => pic.palette[k])));
   hideOverlay();
@@ -103,6 +108,7 @@ function resetView(animateLayout: boolean): void {
   celebrating = null;
   view.particlesOnTop = false;
   checkPending = g().stuck;
+  tripleStep = Math.round((totalStones - stoneCount(g().board)) / 3);
   applyLayout(animateLayout);
   updateHud();
 }
@@ -122,6 +128,8 @@ function resize(): void {
 
 function updateHud(): void {
   $('level').textContent = STR.level(levelNo);
+  const done = 1 - stoneCount(g().board) / totalStones;
+  $('progress-fill').style.width = `${Math.round(done * 100)}%`;
   $<HTMLButtonElement>('undo').disabled = !g().canUndo;
   $<HTMLButtonElement>('shelf').disabled = !g().canAddShelf;
 }
@@ -140,6 +148,8 @@ function celebrate(): void {
   const t = now();
   celebrating = t;
   view.particlesOnTop = true;
+  sound.win();
+  haptics.buzz([30, 60, 30, 60, 90]);
   addToGallery(picture.pic.id, levelNo);
   completeLevel(levelNo);
   const size = Math.min(cssW * 0.86, (cssH - 230) * 0.95);
@@ -165,6 +175,8 @@ function showWin(): void {
 }
 
 function showStuck(): void {
+  sound.stuck();
+  haptics.buzz(25);
   const buttons: CardButton[] = [[STR.stuckUndo, undo, true]];
   if (g().canAddShelf) buttons.push([STR.stuckShelf, addShelf]);
   buttons.push([STR.stuckRestart, restart]);
@@ -192,6 +204,7 @@ function undo(): void {
   if (celebrating !== null) return;
   view.flush();
   if (g().undo()) {
+    sound.undo();
     resetView(false);
     persist();
   }
@@ -200,6 +213,7 @@ function undo(): void {
 function restart(): void {
   if (celebrating !== null) return;
   g().restart();
+  sound.undo();
   resetView(false);
   persist();
 }
@@ -208,6 +222,8 @@ function addShelf(): void {
   if (celebrating !== null) return;
   view.flush();
   if (!g().addShelf()) return;
+  sound.shelf();
+  haptics.buzz(12);
   resetView(true);
   view.appearLast(now());
   persist();
@@ -225,6 +241,7 @@ async function hint(): Promise<void> {
   if (asked !== version || !hintIsValid(g().board, result)) return;
 
   if (result.kind === 'move') {
+    sound.hint();
     view.selected = result.from;
     view.hint = { from: result.from, to: result.to.shelf, start: now() };
   } else if (result.kind === 'undo') {
@@ -254,12 +271,30 @@ async function hint(): Promise<void> {
 
 export function initGame(h: GameHooks): void {
   hooks = h;
+  view.onEvent = (e) => {
+    const delay = e.at - now();
+    if (e.type === 'land') {
+      sound.land(delay);
+      haptics.buzz(6);
+    } else if (e.type === 'triple') {
+      sound.triple(tripleStep++, delay);
+      haptics.buzz([12, 40, 18]);
+    } else if (e.type === 'advance') {
+      sound.advance(delay);
+    } else if (e.type === 'pour') {
+      sound.pour(delay, e.cells);
+    }
+  };
   new InputController(canvas, {
     board: () => g().board,
     layout: () => view.layout,
     blocked: () => overlayOpen() || celebrating !== null || !game,
     selected: () => view.selected,
     select: (ref) => {
+      if (ref) {
+        sound.pick();
+        haptics.buzz(5);
+      }
       view.selected = ref;
       if (!ref) view.hint = null;
     },
