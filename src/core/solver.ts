@@ -172,3 +172,8 @@ export function toCellMove(board: Board, m: SolverMove): { from: CellRef; to: Ce
     to: { shelf: m.to, cell: firstFreeCell(dst) },
   };
 }
+
+/** The move the solver would try first (used when the search runs out of budget). */
+export function firstMoveGuess(board: Board): SolverMove | null {
+  return generateMoves(fromBoard(board))[0] ?? null;
+}

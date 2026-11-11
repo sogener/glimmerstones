@@ -32,7 +32,7 @@ body {
   flex-direction: column;
   padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom)
     env(safe-area-inset-left);
-  background: radial-gradient(120% 80% at 50% 0%, var(--bg1), var(--bg2));
+  background: radial-gradient(130% 90% at 50% 18%, #2e1c50 0%, #1b1131 58%, #0e091c 100%);
 }
 header,
 footer {
@@ -100,8 +100,51 @@ footer button {
   font-size: 12px;
 }
 footer .ico {
-  font-size: 20px;
+  display: flex;
   line-height: 1;
+}
+footer {
+  gap: 10px;
+  padding: 8px 12px 10px;
+}
+footer button {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.13), rgba(255, 255, 255, 0.05));
+  border-color: rgba(255, 225, 170, 0.18);
+  color: #fbeedd;
+}
+#hint .ico {
+  color: #ffe2a0;
+}
+#hint.thinking .ico {
+  animation: think 0.9s ease-in-out infinite alternate;
+}
+@keyframes think {
+  from {
+    opacity: 0.35;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1.1);
+  }
+}
+#toast {
+  position: absolute;
+  left: 50%;
+  top: calc(env(safe-area-inset-top) + 72px);
+  transform: translateX(-50%);
+  padding: 10px 16px;
+  border-radius: 14px;
+  background: rgba(30, 18, 54, 0.92);
+  border: 1px solid rgba(255, 225, 170, 0.2);
+  color: var(--ink);
+  font-size: 14px;
+  pointer-events: none;
+  transition: opacity 0.3s;
+}
+#toast[hidden] {
+  display: block;
+  opacity: 0;
 }
 #overlay {
   position: absolute;
@@ -120,9 +163,17 @@ footer .ico {
   width: min(86vw, 340px);
   padding: 24px 20px 18px;
   border-radius: 24px;
-  background: linear-gradient(180deg, #3a2763, #24183f);
+  border: 1px solid rgba(255, 225, 170, 0.22);
+  background: linear-gradient(180deg, #3d2768, #241640);
+  animation: pop 0.28s cubic-bezier(0.2, 1.4, 0.4, 1);
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
   text-align: center;
+}
+@keyframes pop {
+  from {
+    transform: scale(0.85);
+    opacity: 0;
+  }
 }
 .card h2 {
   margin: 0 0 6px;
@@ -140,8 +191,8 @@ footer .ico {
   margin-top: 10px;
 }
 .card button.primary {
-  background: linear-gradient(180deg, #ff9fd6, #d66fc0);
+  background: linear-gradient(180deg, #ffe3a3, #e0a955);
   border: none;
-  color: #2a1235;
+  color: #3a2410;
   font-weight: 600;
 }

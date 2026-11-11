@@ -42,6 +42,17 @@ export class Game {
     return result.events;
   }
 
+  /** Earlier positions, most recent first. */
+  get pastBoards(): readonly Board[] {
+    return [...this.history].reverse();
+  }
+
+  undoMany(steps: number): number {
+    let done = 0;
+    while (done < steps && this.undo()) done++;
+    return done;
+  }
+
   undo(): boolean {
     const prev = this.history.pop();
     if (!prev) return false;

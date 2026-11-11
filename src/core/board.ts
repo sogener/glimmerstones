@@ -124,6 +124,31 @@ export function applyMove(b: Board, from: CellRef, to: CellRef): MoveResult | nu
   return { board: { shelves }, events };
 }
 
+/** Replaces one cell of a front row, without settling (for animation steps). */
+export function setCell(b: Board, ref: CellRef, value: Cell): Board {
+  const shelves = [...b.shelves];
+  const s = shelves[ref.shelf];
+  const front = [...s.front];
+  front[ref.cell] = value;
+  shelves[ref.shelf] = { front, layers: s.layers };
+  return { shelves };
+}
+
+/** Applies a single settle event to a board (used to replay a move step by step). */
+export function applyEvent(b: Board, e: BoardEvent): Board {
+  const shelves = [...b.shelves];
+  const s = shelves[e.shelf];
+  if (e.type === 'triple') {
+    shelves[e.shelf] = { front: s.front.map(() => null), layers: s.layers };
+  } else {
+    shelves[e.shelf] = {
+      front: Array.from({ length: ROW }, (_, i) => e.stones[i] ?? null),
+      layers: s.layers.slice(1),
+    };
+  }
+  return { shelves };
+}
+
 export function addEmptyShelf(b: Board): Board {
   return { shelves: [...b.shelves, emptyShelf()] };
 }
