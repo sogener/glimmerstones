@@ -5,6 +5,8 @@ import type { Board } from './types.ts';
 export interface PackedLevel {
   n: number;
   seed: number;
+  /** Reward picture id; its palette gives the level colors. */
+  picture: string;
   colors: number;
   /** Encoded shelves, see board.encodeShelf. */
   shelves: string[];

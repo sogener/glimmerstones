@@ -1,0 +1,38 @@
+{
+  "id": "bouquet",
+  "name": "Букет",
+  "width": 20,
+  "height": 20,
+  "palette": {
+    "p": "#ff6fb5",
+    "v": "#a66bff",
+    "b": "#4aa8ff",
+    "y": "#ffd23a",
+    "g": "#3cba54",
+    "d": "#1f7a3a",
+    "t": "#d9824a",
+    "l": "#ffc08a"
+  },
+  "rows": [
+    ".........vv.........",
+    ".......vvvvvv.......",
+    "....ppvvvvvvvvbb....",
+    "..ppppvvvyyvbbbbbb..",
+    ".ppppppvvyybbbbbbbb.",
+    ".pppyypvvvvbbbyybbb.",
+    "..ppyypvvvvvbbyybb..",
+    "..ppppppvvvvbbbbbb..",
+    "..ppppppg.g.bbbbbb..",
+    "...pppp.g.g..bbbb...",
+    ".....ddd..g..ddd....",
+    "......ddd.g.ddd.....",
+    "......ddddddddd.....",
+    "...lllllllgllllll...",
+    "...llllllllllllll...",
+    "....tttttttttttt....",
+    ".....tttttttttt.....",
+    ".....tttttttttt.....",
+    "......tttttttt......",
+    "......tttttttt......"
+  ]
+}

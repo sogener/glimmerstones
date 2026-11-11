@@ -1,0 +1,30 @@
+{
+  "id": "strawberry",
+  "name": "Клубничка",
+  "width": 16,
+  "height": 16,
+  "palette": {
+    "r": "#ff3b55",
+    "p": "#ffb3c0",
+    "g": "#3fbf5a",
+    "d": "#1f8a3d"
+  },
+  "rows": [
+    "........d.......",
+    ".....g..d..g....",
+    "....ggggdgggg...",
+    "....ggggggggg...",
+    "...ggggggggggg..",
+    ".rrrrrgggggrrrrr",
+    ".rrrrrrrgrrrrrrr",
+    ".rrrprrrrrprrrrr",
+    ".rrrrprrrrrprrrr",
+    "..rrrrprrrrrprr.",
+    "...rrrrprrrrrr..",
+    "....rrrrprrrr...",
+    ".....rrrrrrr....",
+    "......rrrrr.....",
+    ".......rrr......",
+    "........r......."
+  ]
+}

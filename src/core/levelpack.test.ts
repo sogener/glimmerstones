@@ -3,7 +3,9 @@ import pack from '../data/levels.json';
 import { colorCounts, encodeBoard, stoneCount } from './board.ts';
 import { generateSolvable } from './generator.ts';
 import { levelBoard, type LevelPack } from './levelpack.ts';
-import { paramsForLevel, targetWinRate } from './levels.ts';
+import { assignPictures, paramsForLevel, targetWinRate } from './levels.ts';
+import { components, paletteKeys } from './picture.ts';
+import { getPicture, PICTURES } from '../pictures/index.ts';
 import { solve } from './solver.ts';
 import { MAX_COLORS, MAX_SHELVES, MIN_SHELVES, ROW } from './types.ts';
 
@@ -33,9 +35,25 @@ describe('pre-generated level pack', () => {
     }
   });
 
+  it('every level uses its picture palette, one triple per picture piece', () => {
+    for (const l of levels) {
+      const pic = getPicture(l.picture);
+      expect(pic, `level ${l.n} picture ${l.picture}`).toBeDefined();
+      const keys = paletteKeys(pic!);
+      expect(l.colors).toBe(keys.length);
+      const triples = colorCounts(levelBoard(l)).map((c) => c / ROW);
+      expect(triples.length).toBe(keys.length);
+      const comps = components(pic!);
+      triples.forEach((t, c) => expect(t).toBeGreaterThanOrEqual(comps[c].length));
+    }
+  });
+
   it('is up to date with the generator (run `npm run levels` if this fails)', () => {
+    const ids = assignPictures(levels.length, PICTURES);
+    levels.forEach((l, i) => expect(l.picture).toBe(ids[i]));
     for (const n of [1, 2, 3, 4, 5, 12, 31]) {
-      const g = generateSolvable(n, paramsForLevel(n), { targetWinRate: targetWinRate(n), maxNodes: 150_000 });
+      const pic = getPicture(ids[n - 1])!;
+      const g = generateSolvable(n, paramsForLevel(n, pic), { targetWinRate: targetWinRate(n), maxNodes: 150_000 });
       expect(encodeBoard(g.board)).toEqual(levels[n - 1].shelves);
     }
   });

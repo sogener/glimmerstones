@@ -1,0 +1,29 @@
+{
+  "id": "star",
+  "name": "Звёздочка",
+  "width": 16,
+  "height": 16,
+  "palette": {
+    "o": "#c47f0e",
+    "y": "#ffc934",
+    "l": "#fff1a6"
+  },
+  "rows": [
+    ".......o........",
+    ".......o........",
+    "......oyo.......",
+    "......oyo.......",
+    ".....oyyyo......",
+    "oooooylyyyoooooo",
+    ".oyyllllllyyyoo.",
+    "..oyylllyyyyo...",
+    "...oylllyyyo....",
+    "....olyylyo.....",
+    "....oyyyyyo.....",
+    "...oyyyyyyyo....",
+    "...oyyoooyyo....",
+    "...oyo...oyo....",
+    "..ooo.....ooo...",
+    "..o.........o..."
+  ]
+}

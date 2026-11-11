@@ -1,0 +1,31 @@
+{
+  "id": "cupcake",
+  "name": "Кекс",
+  "width": 16,
+  "height": 16,
+  "palette": {
+    "f": "#ff8fc8",
+    "w": "#fff0f6",
+    "c": "#e0303e",
+    "b": "#b77845",
+    "s": "#d9a066"
+  },
+  "rows": [
+    ".......cc.......",
+    "......cccc......",
+    "......ccccf.....",
+    "....fffccffff...",
+    "...ffwwfffffff..",
+    "...fwwwwffffff..",
+    "...ffwwfffffff..",
+    ".fffffffffffffff",
+    ".fffffffffffffff",
+    ".fffffffffffffff",
+    "..bfffffffffffb.",
+    "...bsfffffffbb..",
+    "...bsbbsbbsbbb..",
+    "...bsbbsbbbsbb..",
+    "....sbbsbbbsb...",
+    "....sbbsbbbsb..."
+  ]
+}

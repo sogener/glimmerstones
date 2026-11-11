@@ -1,0 +1,30 @@
+{
+  "id": "fish",
+  "name": "Рыбка",
+  "width": 16,
+  "height": 16,
+  "palette": {
+    "o": "#ff8a2a",
+    "y": "#ffc86a",
+    "t": "#ff5a3a",
+    "k": "#2a1a3a"
+  },
+  "rows": [
+    "................",
+    ".......t........",
+    "......ttt.......",
+    "....ttttt......t",
+    "...ooooooto...tt",
+    "..oooooooooo.ttt",
+    ".oookkooooootttt",
+    ".oookkooooottttt",
+    ".ooooyyyootttttt",
+    ".ooyyyyyyyottttt",
+    ".ooyyyyyyyootttt",
+    "..oyyyyyyyoo.ttt",
+    "...ooyyyooo...tt",
+    ".....oooo......t",
+    "................",
+    "................"
+  ]
+}

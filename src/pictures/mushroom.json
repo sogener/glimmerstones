@@ -1,0 +1,30 @@
+{
+  "id": "mushroom",
+  "name": "Грибок",
+  "width": 16,
+  "height": 16,
+  "palette": {
+    "r": "#e23b3b",
+    "w": "#fff3ea",
+    "s": "#f1d3a8",
+    "o": "#8a3a2a"
+  },
+  "rows": [
+    "................",
+    ".....rrrrrr.....",
+    "...rrrrrrrwwr...",
+    "..rrwwrrrwwwwr..",
+    ".rrwwwwrrwwwwrr.",
+    ".rrwwwwrrrwwrrr.",
+    "rrrrwwrwwrrrrrrr",
+    "rrrrrrrwwrrrrrrr",
+    "roooooooooooooor",
+    ".....ssssss.....",
+    ".....ssssss.....",
+    ".....ssssss.....",
+    ".....ssssss.....",
+    ".....ssssss.....",
+    "....ssssssss....",
+    "....ssssssss...."
+  ]
+}

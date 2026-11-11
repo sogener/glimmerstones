@@ -6,8 +6,14 @@ import type { CellRef } from './core/types.ts';
 import { HintClient } from './hint/client.ts';
 import { InputController } from './input/controller.ts';
 import { getLevel, LEVEL_COUNT } from './levelData.ts';
-import { computeLayout } from './render/layout.ts';
+import { colorCounts } from './core/board.ts';
+import { paletteKeys } from './core/picture.ts';
+import { getPicture } from './pictures/index.ts';
+import { gemStylesForPalette } from './render/gems.ts';
+import { splitField, type Rect } from './render/layout.ts';
+import { PictureView } from './render/picture.ts';
 import { BoardView } from './render/view.ts';
+import { addToGallery } from './storage.ts';
 import { ICONS } from './ui/icons.ts';
 import { STR } from './ui/strings.ts';
 
@@ -21,6 +27,8 @@ const toast = $<HTMLElement>('toast');
 const hintBtn = $<HTMLButtonElement>('hint');
 
 const view = new BoardView();
+const picture = new PictureView();
+view.tripleSink = picture;
 const hints = new HintClient();
 let levelNo = 1;
 let game: Game;
@@ -30,6 +38,10 @@ let cssH = 0;
 let version = 0;
 let checkPending = false;
 let hintBusy = false;
+let dpr = 1;
+/** Time the win celebration started, or null. */
+let celebrating: number | null = null;
+const CELEBRATION_MS = 1900;
 
 const now = () => performance.now();
 
@@ -41,9 +53,21 @@ function readLevelFromHash(): number {
 function startLevel(n: number): void {
   levelNo = Math.min(Math.max(1, n), LEVEL_COUNT);
   history.replaceState(null, '', `#${levelNo}`);
-  game = new Game(levelBoard(getLevel(levelNo)));
+  const level = getLevel(levelNo);
+  game = new Game(levelBoard(level));
+  const pic = getPicture(level.picture)!;
+  const triples = colorCounts(game.board).map((n) => n / 3);
+  picture.setPicture(pic, triples);
+  view.atlas.setStyles(gemStylesForPalette(paletteKeys(pic).map((k) => pic.palette[k])));
+  celebrating = null;
   hideOverlay();
   resetView(false);
+}
+
+function applyLayout(animate: boolean): void {
+  const { picH, layout } = splitField(game.board.shelves.length, cssW, cssH);
+  picture.setRect({ x: 0, y: 0, w: cssW, h: picH }, dpr);
+  view.setLayout(layout, now(), animate);
 }
 
 /** Shows the logic board as is (after undo, restart, new level). */
@@ -53,19 +77,23 @@ function resetView(animateLayout: boolean): void {
   view.drag = null;
   view.hint = null;
   view.setBoard(game.board);
-  view.setLayout(computeLayout(game.board.shelves.length, cssW, cssH), now(), animateLayout);
+  picture.sync(game.board);
+  celebrating = null;
+  view.particlesOnTop = false;
+  applyLayout(animateLayout);
   updateHud();
 }
 
 function resize(): void {
-  const dpr = Math.min(window.devicePixelRatio || 1, 3);
+  // DPR 2 is visually indistinguishable on phones and ~2x cheaper than 3.
+  dpr = Math.min(window.devicePixelRatio || 1, 2);
   cssW = field.clientWidth;
   cssH = field.clientHeight;
   canvas.width = Math.round(cssW * dpr);
   canvas.height = Math.round(cssH * dpr);
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   view.setSize(cssW, cssH, dpr);
-  if (game) view.setLayout(computeLayout(game.board.shelves.length, cssW, cssH), now());
+  if (game) applyLayout(false);
 }
 
 function updateHud(): void {
@@ -80,7 +108,8 @@ function updateHud(): void {
 
 type CardButton = [label: string, action: () => void, primary?: boolean];
 
-function showCard(title: string, text: string, buttons: CardButton[]): void {
+function showCard(title: string, text: string, buttons: CardButton[], kind = ''): void {
+  overlay.className = kind;
   card.replaceChildren();
   const h = document.createElement('h2');
   h.textContent = title;
@@ -112,11 +141,30 @@ function showToast(text: string): void {
   toastTimer = window.setTimeout(() => (toast.hidden = true), 1800);
 }
 
+/** The finished picture grows to the center, shimmers, and is saved to the gallery. */
+function celebrate(): void {
+  const t = now();
+  celebrating = t;
+  view.particlesOnTop = true;
+  addToGallery(picture.pic.id, levelNo);
+  const size = Math.min(cssW * 0.86, (cssH - 230) * 0.95);
+  const big: Rect = { x: (cssW - size) / 2, y: Math.max(8, (cssH - 230 - size) / 2), w: size, h: size };
+  picture.celebrate(t, big);
+  for (let k = 0; k < 6; k++) {
+    const a = (k / 6) * Math.PI * 2;
+    view.sparkle(big.x + big.w / 2 + Math.cos(a) * size * 0.42, big.y + big.h / 2 + Math.sin(a) * size * 0.42, t + 700 + k * 120);
+  }
+  setTimeout(showWin, CELEBRATION_MS - 300);
+}
+
 function showWin(): void {
   const last = levelNo >= LEVEL_COUNT;
-  showCard(STR.winTitle, STR.winText(levelNo), [
-    [last ? STR.restart : STR.next, () => startLevel(last ? 1 : levelNo + 1), true],
-  ]);
+  showCard(
+    STR.winTitle,
+    STR.winText(picture.pic.name),
+    [[last ? STR.restart : STR.next, () => startLevel(last ? 1 : levelNo + 1), true]],
+    'win',
+  );
 }
 
 function showStuck(): void {
@@ -253,10 +301,20 @@ startLevel(readLevelFromHash());
 function frame(): void {
   const t = now();
   ctx.clearRect(0, 0, cssW, cssH);
-  view.draw(ctx, t);
-  if (checkPending && !view.busy(t)) {
+  if (celebrating === null) {
+    picture.draw(ctx, t);
+    view.draw(ctx, t);
+  } else {
+    // Shelves fade under a veil, the picture takes the stage.
+    view.draw(ctx, t);
+    ctx.fillStyle = `rgba(20,12,38,${0.8 * Math.min(1, (t - celebrating) / 500)})`;
+    ctx.fillRect(0, 0, cssW, cssH);
+    picture.draw(ctx, t);
+    view.drawParticles(ctx, t);
+  }
+  if (checkPending && !view.busy(t) && !picture.busy(t)) {
     checkPending = false;
-    if (game.won) setTimeout(showWin, 250);
+    if (game.won) setTimeout(celebrate, 150);
     else if (game.stuck) setTimeout(showStuck, 200);
   }
   requestAnimationFrame(frame);
@@ -265,5 +323,5 @@ requestAnimationFrame(frame);
 
 // Dev-only handle for automated browser checks.
 if (import.meta.env.DEV) {
-  (window as unknown as Record<string, unknown>).__gs = { get game() { return game; }, view, startLevel };
+  (window as unknown as Record<string, unknown>).__gs = { get game() { return game; }, view, picture, startLevel };
 }

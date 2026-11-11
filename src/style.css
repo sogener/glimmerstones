@@ -156,6 +156,13 @@ footer button {
   backdrop-filter: blur(3px);
   -webkit-backdrop-filter: blur(3px);
 }
+#overlay.win {
+  align-items: flex-end;
+  padding-bottom: calc(env(safe-area-inset-bottom) + 92px);
+  background: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
 #overlay[hidden] {
   display: none;
 }

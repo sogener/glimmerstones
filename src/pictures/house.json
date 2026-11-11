@@ -1,0 +1,36 @@
+{
+  "id": "house",
+  "name": "Домик",
+  "width": 20,
+  "height": 20,
+  "palette": {
+    "r": "#d9443f",
+    "w": "#ffe2b8",
+    "b": "#8a5230",
+    "y": "#ffd75a",
+    "g": "#4cbf55",
+    "k": "#6b4a8a"
+  },
+  "rows": [
+    "....................",
+    "..........r.........",
+    ".........rrr..kkk...",
+    "........rrrrr.kkk...",
+    ".......rrrrrrrkkk...",
+    "......rrryyrrrkkk...",
+    "....rrrryyyyrrkkk...",
+    "...rrrrryyyyrrrrr...",
+    "..rrrrrrryyrrrrrrr..",
+    ".rrrrrrrrrrrrrrrrrr.",
+    "rrrrrrrrrrrrrrrrrrrr",
+    "...wyyywwwwwwyyyw...",
+    "...wyyywbbbbwyyyw...",
+    "...wyyywbbbbwyyyw...",
+    "...wwwwwbbbbwwwww...",
+    "...wwwwwbbbbwwwww...",
+    "...wwwwwbbbbwwwww...",
+    "...wwwwwbbbbwwwww...",
+    "gggggggggggggggggggg",
+    "gggggggggggggggggggg"
+  ]
+}

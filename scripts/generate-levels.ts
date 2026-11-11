@@ -3,24 +3,36 @@
  * Deterministic, so the output only changes when the generator changes.
  * Usage: node scripts/generate-levels.ts [count]
  */
-import { writeFileSync } from 'node:fs';
+import { readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { encodeBoard } from '../src/core/board.ts';
 import { generateSolvable } from '../src/core/generator.ts';
 import type { LevelPack } from '../src/core/levelpack.ts';
-import { paramsForLevel, targetWinRate } from '../src/core/levels.ts';
+import { assignPictures, paramsForLevel, targetWinRate } from '../src/core/levels.ts';
+import { validatePicture, type PictureData } from '../src/core/picture.ts';
 
 export const LEVEL_COUNT = 240;
 export const BUILD_MAX_NODES = 150_000;
 
 const count = Number(process.argv[2]) || LEVEL_COUNT;
+const picDir = fileURLToPath(new URL('../src/pictures/', import.meta.url));
+const pictures: PictureData[] = readdirSync(picDir)
+  .filter((f) => f.endsWith('.json'))
+  .map((f) => JSON.parse(readFileSync(picDir + f, 'utf8')) as PictureData)
+  .sort((a, b) => (a.id < b.id ? -1 : 1));
+for (const p of pictures) {
+  const errors = validatePicture(p);
+  if (errors.length) throw new Error(`Picture ${p.id}: ${errors.join('; ')}`);
+}
+const pictureIds = assignPictures(count, pictures);
 const out = fileURLToPath(new URL('../src/data/levels.json', import.meta.url));
 const pack: LevelPack = { version: 1, levels: [] };
 const t0 = performance.now();
 let retries = 0;
 
 for (let n = 1; n <= count; n++) {
-  const g = generateSolvable(n, paramsForLevel(n), {
+  const picture = pictures.find((p) => p.id === pictureIds[n - 1])!;
+  const g = generateSolvable(n, paramsForLevel(n, picture), {
     maxNodes: BUILD_MAX_NODES,
     targetWinRate: targetWinRate(n),
   });
@@ -28,6 +40,7 @@ for (let n = 1; n <= count; n++) {
   pack.levels.push({
     n,
     seed: g.seed,
+    picture: picture.id,
     colors: g.params.colors,
     shelves: encodeBoard(g.board),
     solution: g.solution,
@@ -36,7 +49,7 @@ for (let n = 1; n <= count; n++) {
   if (n % 20 === 0 || n <= 5) {
     const p = g.params;
     console.log(
-      `#${n}: ${p.colors} colors, ${p.triples.reduce((a, b) => a + b, 0)} triples, ` +
+      `#${n} ${picture.id}: ${p.colors} colors, ${p.triples.reduce((a, b) => a + b, 0)} triples, ` +
         `${p.shelves} shelves, depth ${p.depth}, empty ${p.emptyCells} | ` +
         `attempt ${g.attempt}, solution ${g.solution}, nodes ${g.nodes}, ` +
         `win ${g.winRate.toFixed(2)} (target ${targetWinRate(n).toFixed(2)})`,

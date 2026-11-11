@@ -1,0 +1,30 @@
+{
+  "id": "apple",
+  "name": "Яблочко",
+  "width": 16,
+  "height": 16,
+  "palette": {
+    "r": "#e8343f",
+    "h": "#ff9a8f",
+    "g": "#4fbf4a",
+    "b": "#7a4a26"
+  },
+  "rows": [
+    "............g...",
+    ".......bb..gggg.",
+    ".......bb.gggg..",
+    "........bgggg...",
+    "....rr..bbrg....",
+    "...rrrr.rrrrr...",
+    "..rrhrrrrrrrrr..",
+    ".rrhhhrrrrrrrrr.",
+    ".rrhhhrrrrrrrrr.",
+    ".rrrhrrrrrrrrrr.",
+    ".rrrrrrrrrrrrrr.",
+    ".rrrrrrrrrrrrrr.",
+    ".rrrrrrrrrrrrrr.",
+    "..rrrrrrrrrrrr..",
+    "...rrrr.rrrrr...",
+    "....rr...rrr...."
+  ]
+}

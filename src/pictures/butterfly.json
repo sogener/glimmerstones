@@ -1,0 +1,36 @@
+{
+  "id": "butterfly",
+  "name": "Бабочка",
+  "width": 20,
+  "height": 20,
+  "palette": {
+    "v": "#a35bff",
+    "p": "#ff7fd0",
+    "y": "#ffd23a",
+    "b": "#5a3a2a",
+    "l": "#d8b8ff",
+    "a": "#3a2a5a"
+  },
+  "rows": [
+    "......a......a......",
+    ".......a....a.......",
+    "...vvvva....avvvv...",
+    ".llvvvvva..avvvvvll.",
+    ".llvyyvvvaavvvyyvll.",
+    "vvvyyyyvvbbvvyyyyvvv",
+    "vvvyyyyvvbbvvyyyyvvv",
+    "vvvvyyvvvbbvvvyyvvvv",
+    "vvvvvvvvvbbvvvvvvvvv",
+    ".vvvvvvvvbbvvvvvvvv.",
+    "..vvpppp.bb.ppppvv..",
+    "...ppppppbbpppppp...",
+    "..pppppppbbppppppp..",
+    "..pppppppbbppppppp..",
+    "..pppppppbbppppppp..",
+    "..pppppppbbppppppp..",
+    "...ppppppbbpppppp...",
+    "....pppp....pppp....",
+    "....................",
+    "...................."
+  ]
+}

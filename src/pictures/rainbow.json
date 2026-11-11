@@ -1,0 +1,33 @@
+{
+  "id": "rainbow",
+  "name": "Радуга",
+  "width": 20,
+  "height": 16,
+  "palette": {
+    "r": "#ff4a5a",
+    "o": "#ff9a3a",
+    "y": "#ffd93a",
+    "g": "#4ccc5a",
+    "b": "#3a8cff",
+    "v": "#9a5aff",
+    "w": "#ffffff"
+  },
+  "rows": [
+    "....................",
+    "....................",
+    "....................",
+    ".........rr.........",
+    "......rrrrrrrr......",
+    "....rroooooooorr....",
+    "...rrooyyyyyyoorr...",
+    "..rrooyyggggyyoorr..",
+    "..rooygggbbgggyoor..",
+    ".rowyggbbbbbbggwwor.",
+    ".rwwwgbbvvvvbbgwwww.",
+    ".wwwwgbv....vbgwwwww",
+    "wwwwwwbv....vbwwwwww",
+    "wwwwww........wwwwww",
+    ".wwww..........wwwww",
+    "..ww............www."
+  ]
+}

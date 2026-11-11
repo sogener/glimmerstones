@@ -1,0 +1,29 @@
+{
+  "id": "heart",
+  "name": "Сердечко",
+  "width": 16,
+  "height": 16,
+  "palette": {
+    "o": "#b8234a",
+    "r": "#ff5a7e",
+    "w": "#ffd3df"
+  },
+  "rows": [
+    "................",
+    "...ooo....ooo...",
+    ".oorrroooorrroo.",
+    ".orrrrrrrrrrrro.",
+    "orrwwrrrrrrrrrro",
+    "orwwrrrrrrrrrrro",
+    "orwrrrrrrrrrrrro",
+    ".orrrrrrrrrrrro.",
+    ".oorrrrrrrrrroo.",
+    "...orrrrrrrro...",
+    "....orrrrrro....",
+    ".....orrrrro....",
+    "......orrro.....",
+    ".......oro......",
+    "........o.......",
+    "................"
+  ]
+}

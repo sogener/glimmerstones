@@ -49,7 +49,7 @@ function cellFor(count: number, cols: number, width: number, height: number): nu
  * Lays shelves out centered in 2 columns (portrait first), or in a single column
  * when that makes the stones clearly bigger (small levels).
  */
-export function computeLayout(count: number, width: number, height: number): Layout {
+export function computeLayout(count: number, width: number, height: number, top = 0): Layout {
   const one = cellFor(count, 1, width, height);
   const two = cellFor(count, 2, width, height);
   const COLS = one > two * 1.15 ? 1 : 2;
@@ -59,7 +59,7 @@ export function computeLayout(count: number, width: number, height: number): Lay
   const shelfH = SHELF_H;
 
   const totalH = (rows * shelfH + (rows - 1) * GAP_Y) * cell;
-  const top = (height - totalH) / 2;
+  const y0 = top + (height - totalH) / 2;
   const shelves: ShelfLayout[] = [];
   for (let i = 0; i < count; i++) {
     const row = Math.floor(i / COLS);
@@ -67,7 +67,7 @@ export function computeLayout(count: number, width: number, height: number): Lay
     const col = i % COLS;
     const rowW = (inRow * shelfW + (inRow - 1) * GAP_X) * cell;
     const x = (width - rowW) / 2 + col * (shelfW + GAP_X) * cell;
-    const y = top + row * (shelfH + GAP_Y) * cell;
+    const y = y0 + row * (shelfH + GAP_Y) * cell;
     const frontY = y + PEEK * cell;
     shelves.push({
       rect: { x, y, w: shelfW * cell, h: shelfH * cell },
@@ -78,6 +78,23 @@ export function computeLayout(count: number, width: number, height: number): Lay
     });
   }
   return { cell, gemR: cell * 0.4, peekR: cell * 0.28, shelves };
+}
+
+const PIC_MIN = 120;
+const PIC_MAX = 230;
+
+/**
+ * Splits the field into the picture strip on top and the shelves below:
+ * shelves first get what they need at the size the width allows,
+ * the picture gets the rest (within PIC_MIN..PIC_MAX).
+ */
+export function splitField(count: number, width: number, height: number): { picH: number; layout: Layout } {
+  const probe = computeLayout(count, width, height - PIC_MIN);
+  const top = Math.min(...probe.shelves.map((s) => s.rect.y));
+  const bottom = Math.max(...probe.shelves.map((s) => s.rect.y + s.rect.h));
+  const need = bottom - top + MARGIN * 2;
+  const picH = Math.max(PIC_MIN, Math.min(PIC_MAX, height * 0.4, height - need));
+  return { picH, layout: computeLayout(count, width, height - picH, picH) };
 }
 
 export function inRect(r: Rect, x: number, y: number, grow = 0): boolean {

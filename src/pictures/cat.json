@@ -1,0 +1,36 @@
+{
+  "id": "cat",
+  "name": "Котик",
+  "width": 20,
+  "height": 20,
+  "palette": {
+    "o": "#ff9a3c",
+    "d": "#c8641e",
+    "p": "#ffb0c4",
+    "w": "#fff4e6",
+    "g": "#58c26a",
+    "k": "#3a2440"
+  },
+  "rows": [
+    "..o..............o..",
+    "..oo............oo..",
+    "..opo..........opo..",
+    "..oppoo......ooppo..",
+    "..opppoooooooopppo..",
+    "..oppppodoodoppppo..",
+    "..opoooodoodoooopo..",
+    "..oooooooddooooooo..",
+    "..oooooooddooooooo..",
+    "..oooggooooooggooo..",
+    ".ooogkggoooogkggooo.",
+    ".ooogkggoooogkggooo.",
+    ".ooooggowwwwoggoooo.",
+    ".ooooowwppppwwooooo.",
+    "..ooowwwwpwwwwwooo..",
+    "..ooowwwwkkwwwwooo..",
+    "...oowwwwkkwwwwoo...",
+    "....oowwwwwwwwoo....",
+    ".....ooowwwwooo.....",
+    ".......oooooo......."
+  ]
+}

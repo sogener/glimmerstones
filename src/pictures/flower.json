@@ -1,0 +1,31 @@
+{
+  "id": "flower",
+  "name": "Цветочек",
+  "width": 16,
+  "height": 16,
+  "palette": {
+    "p": "#ff7fc0",
+    "q": "#ffc1e2",
+    "y": "#ffd23a",
+    "g": "#3cba54",
+    "d": "#238c3a"
+  },
+  "rows": [
+    ".......pp.......",
+    "......qqpp......",
+    "...ppqppppppp...",
+    "..pppppyyppppp..",
+    ".pppppyyyyppppp.",
+    ".ppppyyyyyypppp.",
+    "..pppyyyyyyppp..",
+    "...pppyyyyppp...",
+    "...ppppyypppp...",
+    "...pppppppppp...",
+    "...dpppggppp.d..",
+    "...dddpggppddd..",
+    "..dddddgddddddd.",
+    "....ddddd.d.....",
+    "......dgg.......",
+    ".......gg......."
+  ]
+}

@@ -12,12 +12,16 @@ import type { Board, CellRef, Color, Shelf } from '../core/types.ts';
 import { drawSprite, GemAtlas } from './gems.ts';
 import { lerpLayout, type Layout, type ShelfLayout } from './layout.ts';
 import { Particles } from './particles.ts';
+import type { PieceRef } from './picture.ts';
 import { drawBackground, drawShelfBack, drawShelfFront, ShelfLayers } from './shelves.ts';
 
 /** Timings, ms. */
 const T = {
   land: 200,
   tripleGather: 380,
+  tripleSwell: 220,
+  toPicture: 560,
+  toPictureStagger: 80,
   flash: 520,
   advance: 400,
   advanceStagger: 50,
@@ -49,6 +53,23 @@ interface Flyer {
   arc: number;
   /** Cell kept hidden until the flyer lands (used when a dragged stone returns). */
   hide?: CellRef;
+}
+
+/** Receives collected triples (the reward picture). */
+export interface TripleSink {
+  reserve(color: Color): { ref: PieceRef; x: number; y: number; size: number } | null;
+  arrive(ref: PieceRef, at: number): void;
+}
+
+interface PicFlyer {
+  color: Color;
+  x0: number;
+  y0: number;
+  x1: number;
+  y1: number;
+  r1: number;
+  start: number;
+  dur: number;
 }
 
 interface Flash {
@@ -84,7 +105,10 @@ export class BoardView {
   private anims: (Anim | null)[] = [];
   private queues: Step[][] = [];
   private flyers: Flyer[] = [];
+  private picFlyers: PicFlyer[] = [];
   private flashes: Flash[] = [];
+  /** Where collected triples fly to; without it they just flash on the shelf. */
+  tripleSink: TripleSink | null = null;
 
   layout!: Layout;
   private fromLayout: Layout | null = null;
@@ -128,6 +152,7 @@ export class BoardView {
     this.anims = b.shelves.map(() => null);
     this.queues = b.shelves.map(() => []);
     this.flyers = [];
+    this.picFlyers = [];
   }
 
   /** Marks the last shelf as freshly added. */
@@ -137,8 +162,9 @@ export class BoardView {
   }
 
   /** Jumps all queued animation steps to their end state. */
-  flush(): void {
+  flush(now = performance.now()): void {
     this.queues.forEach((q, i) => {
+      for (const step of q) if (step.anim?.type === 'triple') this.onTriple(i, step.anim.color, now);
       if (q.length > 0) this.shown[i] = q[q.length - 1].shelf;
       q.length = 0;
       this.anims[i] = null;
@@ -149,6 +175,7 @@ export class BoardView {
   busy(now: number): boolean {
     return (
       this.flyers.length > 0 ||
+      this.picFlyers.length > 0 ||
       this.queues.some((q) => q.length > 0) ||
       this.anims.some((a) => a !== null && now < a.start + a.dur) ||
       this.fromLayout !== null
@@ -211,12 +238,13 @@ export class BoardView {
       let t = clock.get(e.shelf) ?? now;
       if (e.type === 'triple') {
         t += 60;
+        const dur = this.tripleSink ? T.tripleSwell : T.tripleGather;
         this.queues[e.shelf].push({
           at: t,
           shelf: cur.shelves[e.shelf],
-          anim: { type: 'triple', color: e.color, dur: T.tripleGather },
+          anim: { type: 'triple', color: e.color, dur },
         });
-        t += T.tripleGather + 60;
+        t += dur + (this.tripleSink ? 40 : 60);
       } else {
         this.queues[e.shelf].push({
           at: t,
@@ -251,13 +279,55 @@ export class BoardView {
         const step = q.shift()!;
         this.shown[i] = step.shelf;
         this.anims[i] = step.anim ? ({ ...step.anim, start: step.at } as Anim) : null;
-        if (step.anim?.type === 'triple') this.scheduleFlash(i, step.anim.color, step.at);
+        if (step.anim?.type === 'triple') this.onTriple(i, step.anim.color, step.at);
       }
       const a = this.anims[i];
       if (a && now >= a.start + a.dur) this.anims[i] = null;
     });
     this.flyers = this.flyers.filter((f) => now < f.start + f.dur);
+    this.picFlyers = this.picFlyers.filter((f) => now < f.start + f.dur);
     this.flashes = this.flashes.filter((f) => now < f.start + T.flash);
+  }
+
+  /** A triple was collected on a shelf at time `at`: fly it into the picture (or flash). */
+  private onTriple(shelf: number, color: Color, at: number): void {
+    const target = this.tripleSink?.reserve(color);
+    if (!target) {
+      this.scheduleFlash(shelf, color, at);
+      return;
+    }
+    const L = this.layout.shelves[shelf];
+    const lift = this.layout.gemR * 0.25;
+    let arrive = at;
+    for (let j = 0; j < 3; j++) {
+      const x0 = L.cellX[j];
+      const y0 = L.gemY - lift;
+      const dist = Math.hypot(target.x - x0, target.y - y0);
+      const start = at + T.tripleSwell + j * T.toPictureStagger;
+      const dur = T.toPicture + dist * 0.22;
+      this.picFlyers.push({ color, x0, y0, x1: target.x, y1: target.y, r1: target.size * 0.6, start, dur });
+      arrive = Math.max(arrive, start + dur);
+    }
+    this.tripleSink!.arrive(target.ref, arrive - 140);
+    const glint = this.atlas.getGlint();
+    this.particles.burst(glint, target.x, target.y, arrive - 80, {
+      count: 12,
+      speed: 0.07,
+      size: Math.max(6, target.size * 1.2),
+      life: 600,
+      gravity: 0.00004,
+    });
+  }
+
+  /** A burst of sparkles anywhere (used by the win celebration). */
+  sparkle(x: number, y: number, at: number): void {
+    const glint = this.atlas.getGlint();
+    this.particles.burst(glint, x, y, at, { count: 10, speed: 0.09, size: this.layout.cell * 0.3, life: 800 });
+  }
+
+  /** Particles only (drawn above the celebrating picture). */
+  drawParticles(ctx: CanvasRenderingContext2D, now: number): void {
+    this.particles.draw(ctx, now);
   }
 
   private scheduleFlash(shelf: number, color: Color, at: number): void {
@@ -300,6 +370,7 @@ export class BoardView {
     this.drawHint(ctx, layout, now);
     this.drawSelected(ctx, layout, now);
     for (const f of this.flyers) this.drawFlyer(ctx, f, layout, now);
+    for (const f of this.picFlyers) this.drawPicFlyer(ctx, f, layout, now);
     if (this.drag) {
       const d = this.drag;
       const r = layout.gemR * 1.12;
@@ -307,8 +378,11 @@ export class BoardView {
       drawSprite(ctx, this.atlas.get(d.color, this.layout.gemR), d.x, d.y, r);
     }
     this.drawFlashes(ctx, layout, now);
-    this.particles.draw(ctx, now);
+    if (!this.particlesOnTop) this.particles.draw(ctx, now);
   }
+
+  /** When true, draw() skips particles so the caller can draw them above other layers. */
+  particlesOnTop = false;
 
   private appearAlpha(i: number, now: number): number {
     const a = this.anims[i];
@@ -416,6 +490,17 @@ export class BoardView {
 
   private drawTriple(ctx: CanvasRenderingContext2D, anim: Extract<Anim, { type: 'triple' }>, L: ShelfLayout, gemR: number, now: number): void {
     const k = clamp01((now - anim.start) / anim.dur);
+    if (this.tripleSink) {
+      // Stones swell and rise; then they leave as picture flyers.
+      const sw = easeOutCubic(k);
+      for (let j = 0; j < 3; j++) {
+        const y = L.gemY - gemR * 0.25 * sw;
+        const r = gemR * (1 + 0.15 * sw);
+        this.glow(ctx, anim.color, L.cellX[j], y, r, 0.3 + 0.5 * sw);
+        drawSprite(ctx, this.atlas.get(anim.color, this.layout.gemR), L.cellX[j], y, r);
+      }
+      return;
+    }
     const cx = L.cellX[1];
     const swell = easeOutCubic(clamp01(k / 0.35));
     const gather = easeInCubic(clamp01((k - 0.3) / 0.7));
@@ -458,6 +543,24 @@ export class BoardView {
     const y = lerp(f.y0, f.y1, e) - Math.sin(Math.PI * e) * f.arc;
     const r = layout.gemR * (1 + 0.12 * bump(k));
     this.glow(ctx, f.color, x, y, r, 0.5 * bump(k) + 0.2);
+    drawSprite(ctx, this.atlas.get(f.color, this.layout.gemR), x, y, r);
+  }
+
+  private drawPicFlyer(ctx: CanvasRenderingContext2D, f: PicFlyer, layout: Layout, now: number): void {
+    if (now < f.start) {
+      // Waiting for its turn: hover in place, still glowing.
+      const r = layout.gemR * 1.15;
+      this.glow(ctx, f.color, f.x0, f.y0, r, 0.8);
+      drawSprite(ctx, this.atlas.get(f.color, this.layout.gemR), f.x0, f.y0, r);
+      return;
+    }
+    const k = clamp01((now - f.start) / f.dur);
+    const e = easeInOutCubic(k);
+    const x = lerp(f.x0, f.x1, e);
+    const lift = Math.min(layout.cell * 2.2, Math.abs(f.y0 - f.y1) * 0.35 + layout.cell);
+    const y = lerp(f.y0, f.y1, e) - Math.sin(Math.PI * e) * lift;
+    const r = lerp(layout.gemR * 1.15, f.r1, easeInCubic(k));
+    this.glow(ctx, f.color, x, y, r * 1.1, 0.85 - 0.4 * k);
     drawSprite(ctx, this.atlas.get(f.color, this.layout.gemR), x, y, r);
   }
 
