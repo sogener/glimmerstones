@@ -123,6 +123,11 @@ scripts/
 - Скрипты на TS запускаются нативно Node 22 (type stripping) — импорты с расширением `.ts`,
   только «стираемый» синтаксис (без enum/namespace).
 
+## Git
+- Автор и коммиттер — владелец репозитория (задано в `git config` репозитория).
+- В сообщениях коммитов нет строк Claude-Session и Co-Authored-By;
+  `.claude/settings.json` отключает атрибуцию, CI роняет сборку, если они есть в истории.
+
 ## Деплой
 GitHub Pages через Actions (`.github/workflows/deploy.yml`) на каждый push в `main`:
 тесты → сборка с `BASE_PATH=/<имя-репо>/` → публикация. Vite `base` берётся из `BASE_PATH`;
