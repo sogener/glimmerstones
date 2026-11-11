@@ -52,3 +52,28 @@ describe('game', () => {
     expect(g.won).toBe(true);
   });
 });
+
+describe('game snapshots', () => {
+  it('restores board, undo history and the extra shelf', () => {
+    const g = start();
+    g.move({ shelf: 1, cell: 0 }, { shelf: 0, cell: 2 });
+    g.addShelf();
+    g.move({ shelf: 2, cell: 0 }, { shelf: 4, cell: 0 });
+    const snap = JSON.parse(JSON.stringify(g.snapshot()));
+    const r = Game.restore(g.initial, snap)!;
+    expect(r).not.toBeNull();
+    expect(encodeBoard(r.board)).toEqual(encodeBoard(g.board));
+    expect(r.canAddShelf).toBe(false);
+    expect(r.undo()).toBe(true);
+    expect(r.undo()).toBe(true);
+    expect(encodeBoard(r.board)).toEqual(['00.|12', '0..', '12.', '...', '...']);
+  });
+
+  it('rejects snapshots that do not belong to the level', () => {
+    const g = start();
+    expect(Game.restore(g.initial, { board: ['000', '...'], history: [], extraShelfUsed: false })).toBeNull();
+    expect(Game.restore(g.initial, { board: ['x'], history: [], extraShelfUsed: false })).toBeNull();
+    const five = { ...g.snapshot(), board: [...g.snapshot().board, '...'] };
+    expect(Game.restore(g.initial, five)).toBeNull(); // extra shelf without using it
+  });
+});

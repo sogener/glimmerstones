@@ -1,5 +1,22 @@
-import { addEmptyShelf, applyMove, isStuck, isWon, type BoardEvent } from './board.ts';
+import {
+  addEmptyShelf,
+  applyMove,
+  colorCounts,
+  decodeBoard,
+  encodeBoard,
+  isStuck,
+  isWon,
+  type BoardEvent,
+} from './board.ts';
 import type { Board, CellRef } from './types.ts';
+
+/** Saved session: enough to continue a level later with full undo. */
+export interface GameSnapshot {
+  board: string[];
+  /** Oldest first. */
+  history: string[][];
+  extraShelfUsed: boolean;
+}
 
 /** One play session of a level: current board, unlimited undo, one extra shelf. */
 export class Game {
@@ -67,6 +84,42 @@ export class Game {
     this.board = addEmptyShelf(this.board);
     this.history = this.history.map(addEmptyShelf);
     return true;
+  }
+
+  snapshot(): GameSnapshot {
+    return {
+      board: encodeBoard(this.board),
+      history: this.history.map(encodeBoard),
+      extraShelfUsed: this.extraShelfUsed,
+    };
+  }
+
+  /** Restores a saved session; returns null if it does not fit this level (e.g. levels changed). */
+  static restore(initial: Board, snap: GameSnapshot): Game | null {
+    try {
+      const g = new Game(initial);
+      const board = decodeBoard(snap.board);
+      const history = snap.history.map(decodeBoard);
+      const base = colorCounts(initial);
+      const n0 = initial.shelves.length;
+      for (const b of [board, ...history]) {
+        const n = b.shelves.length;
+        if (n !== n0 && n !== n0 + 1) return null;
+        if (n === n0 + 1 && !snap.extraShelfUsed) return null;
+        const counts = colorCounts(b);
+        if (counts.length > base.length) return null;
+        for (let c = 0; c < base.length; c++) {
+          const left = counts[c] ?? 0;
+          if (left > base[c] || (base[c] - left) % 3 !== 0) return null;
+        }
+      }
+      g.board = board;
+      g.history = history;
+      g.extraShelfUsed = snap.extraShelfUsed;
+      return g;
+    } catch {
+      return null;
+    }
   }
 
   restart(): void {
